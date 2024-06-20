@@ -166,7 +166,7 @@ div {
 .bottom-container {
     position: fixed;
     left: 0;
-    bottom: 100vh;
+    bottom: 0;
     width: 100%;
     text-align: center;
     background-color: #f9f9f9; /* Light grey background */
@@ -207,11 +207,15 @@ div {
 
 	</form>
 
-<!-- Simplified Participant ID and Session Number Input -->
-<div class="input-container">
-    <input type="text" id="participantId" placeholder="Participant ID">
-    <input type="number" id="sessionNumber" placeholder="Session Number" min="1">
-</div>
+	<!-- Simplified Participant ICheckpoint Input -->
+	<div class="bottom-container">
+		<input type="text" id="participantId" placeholder="Participant ID">
+		<input type="number" id="checkpointNumber" placeholder="Checkpoint Number" min="1">
+	</div>
+
+	<div id="cacheButtonContainer" style="position: fixed; bottom: 0; left: 0; margin: 10px;">
+		<button id="clearCache">Clear Cache</button>
+	</div>
 
 <script>
 window.onload=function(){
@@ -237,13 +241,13 @@ document.addEventListener('DOMContentLoaded', function() {
 	var arousalValue = document.getElementById('AS-arousal').value;
 	var pleasureValue = document.getElementById('AS-pleasure').value;
 
-	// Capture the participant ID and session number
+	// Capture the participant ICheckpoint
 	var participantId = document.getElementById('participantId').value;
-	var sessionNumber = document.getElementById('sessionNumber').value;
+	var checkpointNumber = document.getElementById('checkpointNumber').value;
 
-	// Ensure participantId and sessionNumber are not empty
-	if (!participantId || !sessionNumber) {
-	    alert("Please enter both Participant ID and Session Number.");
+	// Ensure participantId and checkpointNumber are not empty
+	if (!participantId || !checkpointNumber) {
+	    alert("Please enter both Participant ID and Checkpoint Number.");
 	    return; // Stop the function if either is missing
 	}
 
@@ -256,24 +260,42 @@ document.addEventListener('DOMContentLoaded', function() {
 	// Save updated responses back to localStorage
 	localStorage.setItem('responses', JSON.stringify(existingResponses));
 
-	// Call generateExcelFile with participantId and sessionNumber
-	generateExcelFile(participantId, parseInt(sessionNumber, 10)); // Ensure sessionNumber is an integer
+	// Call generateExcelFile with participantId and checkpointNumber
+	generateExcelFile(participantId, parseInt(checkpointNumber, 10)); // Ensure checkpointNumber is an integer
     });
 });
 
-// Function to generate Excel file with all responses, now accepting participantId and sessionNumber
-function generateExcelFile(participantId, sessionNumber) {
-	var existingResponses = JSON.parse(localStorage.getItem('responses')) || [];
-	var data = [["Slider", "Value"]].concat(existingResponses);
+document.getElementById('clearCache').addEventListener('click', function() {
+    clearResponsesCache();
+    alert('Cache cleared successfully!');
+});
 
-	// Convert to worksheet, create workbook, append worksheet
-	var ws = XLSX.utils.aoa_to_sheet(data);
-	var wb = XLSX.utils.book_new();
-	XLSX.utils.book_append_sheet(wb, ws, "Responses");
+// Function to generate Excel file with all responses, now accepting participantId and checkpointNumber
+function generateExcelFile(participantId, checkpointNumber) {
+    var existingResponses = JSON.parse(localStorage.getItem('responses')) || [];
+    
+    // Update the header row to include Participant ID and Checkpoint Number
+    var headerRow = ["Participant ID", "Checkpoint Number", "Arousal", "Value", "Pleasure", "Value"];
+    
+    // Prepend Participant ID and Checkpoint Number to each response
+    var dataWithIds = existingResponses.map(function(response) {
+        return [participantId, checkpointNumber].concat(response);
+    });
+    
+    var data = [headerRow].concat(dataWithIds);
 
-	// Generate Excel file with a filename that includes the participant ID and session number
-	var filename = "SliderResponses_" + participantId + "_" + sessionNumber + ".xlsx";
-	XLSX.writeFile(wb, filename);
+    // Convert to worksheet, create workbook, append worksheet
+    var ws = XLSX.utils.aoa_to_sheet(data);
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Responses");
+
+    // Generate Excel file with a filename that includes the participant ID and Checkpoint
+    var filename = "SliderResponses_" + participantId + "_" + checkpointNumber + ".xlsx";
+    XLSX.writeFile(wb, filename);
+}
+
+function clearResponsesCache() {
+    localStorage.removeItem('responses');
 }
 </script>
 
