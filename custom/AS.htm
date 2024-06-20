@@ -163,6 +163,21 @@ div {
 	margin-bottom: 2em;
 }
 
+.bottom-container {
+    position: fixed;
+    left: 0;
+    bottom: 100vh;
+    width: 100%;
+    text-align: center;
+    background-color: #f9f9f9; /* Light grey background */
+    padding: 20px 0; /* Padding for aesthetic spacing */
+}
+
+.bottom-container > div {
+    display: inline-block;
+    margin: 0 10px; /* Spacing between input boxes */
+}
+
 </style>
 </head>
 <body>
@@ -192,6 +207,12 @@ div {
 
 	</form>
 
+<!-- Simplified Participant ID and Session Number Input -->
+<div class="input-container">
+    <input type="text" id="participantId" placeholder="Participant ID">
+    <input type="number" id="sessionNumber" placeholder="Session Number" min="1">
+</div>
+
 <script>
 window.onload=function(){
 	var aff_slider = document.getElementById('AffectiveSlider');
@@ -209,31 +230,51 @@ window.onload=function(){
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-	document.querySelector('.AffectiveSlider').addEventListener('submit', function(event) {
-		event.preventDefault(); // Prevent the default form submission
+    document.querySelector('.AffectiveSlider').addEventListener('submit', function(event) {
+	event.preventDefault(); // Prevent the default form submission
 
-		// Capture the slider values
-		var arousalValue = document.getElementById('AS-arousal').value;
-		var pleasureValue = document.getElementById('AS-pleasure').value;
+	// Capture the slider values
+	var arousalValue = document.getElementById('AS-arousal').value;
+	var pleasureValue = document.getElementById('AS-pleasure').value;
 
-		// Organize data
-		var data = [
-			["Slider", "Value"],
-			["Arousal", arousalValue],
-			["Pleasure", pleasureValue]
-		];
+	// Capture the participant ID and session number
+	var participantId = document.getElementById('participantId').value;
+	var sessionNumber = document.getElementById('sessionNumber').value;
 
-		// Convert to worksheet
-		var ws = XLSX.utils.aoa_to_sheet(data);
+	// Ensure participantId and sessionNumber are not empty
+	if (!participantId || !sessionNumber) {
+	    alert("Please enter both Participant ID and Session Number.");
+	    return; // Stop the function if either is missing
+	}
 
-		// Create a new workbook and append the worksheet
-		var wb = XLSX.utils.book_new();
-		XLSX.utils.book_append_sheet(wb, ws, "Responses");
+	// Retrieve existing responses from localStorage
+	var existingResponses = JSON.parse(localStorage.getItem('responses')) || [];
 
-		// Generate an XLSX file
-		XLSX.writeFile(wb, "SliderResponses.xlsx");
-	});
+	// Add new response to existing responses
+	existingResponses.push(["Arousal", arousalValue, "Pleasure", pleasureValue]);
+
+	// Save updated responses back to localStorage
+	localStorage.setItem('responses', JSON.stringify(existingResponses));
+
+	// Call generateExcelFile with participantId and sessionNumber
+	generateExcelFile(participantId, parseInt(sessionNumber, 10)); // Ensure sessionNumber is an integer
+    });
 });
+
+// Function to generate Excel file with all responses, now accepting participantId and sessionNumber
+function generateExcelFile(participantId, sessionNumber) {
+	var existingResponses = JSON.parse(localStorage.getItem('responses')) || [];
+	var data = [["Slider", "Value"]].concat(existingResponses);
+
+	// Convert to worksheet, create workbook, append worksheet
+	var ws = XLSX.utils.aoa_to_sheet(data);
+	var wb = XLSX.utils.book_new();
+	XLSX.utils.book_append_sheet(wb, ws, "Responses");
+
+	// Generate Excel file with a filename that includes the participant ID and session number
+	var filename = "SliderResponses_" + participantId + "_" + sessionNumber + ".xlsx";
+	XLSX.writeFile(wb, filename);
+}
 </script>
 
 <body>
